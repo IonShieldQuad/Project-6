@@ -9,7 +9,10 @@ public interface Interpolator extends Function<Double, Double> {
     double upperVal();
     double evaluate(double value) throws InterpolationException;
     
-    @Override
+    default PointDouble evaluateToPoint(double value) throws InterpolationException {
+        return new PointDouble(value, evaluate(value));
+    }
+    
     default Double apply(Double aDouble) {
         try {
             return evaluate(aDouble);
