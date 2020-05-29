@@ -1,8 +1,8 @@
-package ionshield.project5.main;
+package ionshield.project6.main;
 
-import ionshield.project5.math.Interpolator;
-import ionshield.project5.math.LinearInterpolator;
-import ionshield.project5.math.PointDouble;
+import ionshield.project6.math.Interpolator;
+import ionshield.project6.math.LinearInterpolator;
+import ionshield.project6.math.PointDouble;
 
 import java.util.ArrayList;
 import java.util.stream.Collectors;

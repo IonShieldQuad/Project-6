@@ -1,18 +1,26 @@
-package ionshield.project5.graphics;
+package ionshield.project6.graphics;
 
-import ionshield.project5.math.InterpolationException;
-import ionshield.project5.math.Interpolator;
-import ionshield.project5.math.PointDouble;
+import ionshield.project6.math.InterpolationException;
+import ionshield.project6.math.Interpolator;
+import ionshield.project6.math.PointDouble;
 
 import javax.swing.*;
 import java.awt.*;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class GraphDisplay extends JPanel {
+    private boolean autoModeX = true;
+    private boolean autoModeY = true;
+    
+    private boolean extrapolationEnabled = false;
+    
+    private boolean boundRoundingXEnabled = false;
+    private boolean boundRoundingYEnabled = false;
+    private double boundRoundingX = 1;
+    private double boundRoundingY = 1;
+    
     private int marginX = 50;
     private int marginY = 50;
     
@@ -44,21 +52,22 @@ public class GraphDisplay extends JPanel {
     
     private int pointSize = 1;
     private int precision = 3;
+    private int maxNumberLength = 7;
     
     private List<Interpolator> interpolators = new ArrayList<>();
-    private List<Interpolator> interpolatorsHighligthed = new ArrayList<>();
+    private List<Interpolator> interpolatorsHighlighted = new ArrayList<>();
     private List<PointDouble> points = new ArrayList<>();
-    private List<PointDouble> pointsHighligthed = new ArrayList<>();
+    private List<PointDouble> pointsHighlighted = new ArrayList<>();
     
     private double lowerX = 0;
     private double upperX = 0;
     private double lowerY = 0;
     private double upperY = 0;
     
-    private double minX = -Double.MAX_VALUE;
-    private double maxX = +Double.MAX_VALUE;
-    private double minY = -Double.MAX_VALUE;
-    private double maxY = +Double.MAX_VALUE;
+    private double minX = 0;
+    private double maxX = 1;
+    private double minY = 0;
+    private double maxY = 1;
     
     public GraphDisplay() {
         super();
@@ -73,21 +82,21 @@ public class GraphDisplay extends JPanel {
         for (int i = 0; i < interpolators.size(); i++) {
             drawGraph(g, interpolators.get(i), graphColors[i % graphColors.length]);
         }
-        for (int i = 0; i < interpolatorsHighligthed.size(); i++) {
-            drawGraph(g, interpolatorsHighligthed.get(i), graphHighlightColors[i % graphHighlightColors.length]);
+        for (int i = 0; i < interpolatorsHighlighted.size(); i++) {
+            drawGraph(g, interpolatorsHighlighted.get(i), graphHighlightColors[i % graphHighlightColors.length]);
         }
         drawPoints(g);
-        if (upperX != lowerX && upperY != lowerY && interpolatorsCount() + pointCount() > 0) {
+        if (upperX != lowerX && upperY != lowerY && interpolatorCount() + pointCount() > 0) {
             drawValues(g);
         }
     }
     
-    public int interpolatorsCount() {
-        return interpolators.size() + interpolatorsHighligthed.size();
+    public int interpolatorCount() {
+        return interpolators.size() + interpolatorsHighlighted.size();
     }
     
     public int pointCount() {
-        return points.size() + pointsHighligthed.size();
+        return points.size() + pointsHighlighted.size();
     }
     
     private void drawPoints(Graphics g) {
@@ -96,9 +105,9 @@ public class GraphDisplay extends JPanel {
             PointDouble p = valueToGraph(points.get(i));
             g.drawOval((int)Math.round(p.getX()) - pointSize / 2, (int)Math.round(p.getY()) - pointSize / 2, pointSize, pointSize);
         }
-        for (int i = 0; i < pointsHighligthed.size(); i++) {
+        for (int i = 0; i < pointsHighlighted.size(); i++) {
             g.setColor(pointHighlightColors[i % pointHighlightColors.length]);
-            PointDouble p = valueToGraph(pointsHighligthed.get(i));
+            PointDouble p = valueToGraph(pointsHighlighted.get(i));
             g.drawOval((int)Math.round(p.getX()) - pointSize / 2, (int)Math.round(p.getY()) - pointSize / 2, pointSize, pointSize);
         }
     }
@@ -106,13 +115,21 @@ public class GraphDisplay extends JPanel {
     private void drawGraph(Graphics g, Interpolator interpolator, Color color) {
         g.setColor(color);
         int prev = 0;
-        for (int i = 0; i < graphWidth(); i++) {
+        int start = outerLeft();
+        int end = outerRight();
+        
+        if (!extrapolationEnabled) {
+            start = Math.max(start, (int)Math.ceil(valueToGraph(new PointDouble(interpolator.lower(), 0)).getX()));
+            end = Math.min(end, (int)Math.floor(valueToGraph(new PointDouble(interpolator.upper(), 0)).getX()));
+        }
+        
+        for (int i = start; i < end; i++) {
             try {
-                PointDouble val = graphToValue(new PointDouble(i + marginX, 0));
+                PointDouble val = graphToValue(new PointDouble(i, 0));
                 val = new PointDouble(val.getX(), interpolator.evaluate(val.getX()));
                 val = valueToGraph(val);
-                if (i != 0) {
-                    GraphUtils.drawLine(new Line(marginX + i - 1, prev, (int) Math.round(val.getX()), (int)Math.round(val.getY())), g, color);
+                if (i != start) {
+                    GraphUtils.drawLine(new GraphUtils.Line(i - 1, prev, (int) Math.round(val.getX()), (int)Math.round(val.getY())), g, color);
                     //g.drawLine(MARGIN_X + i - 1, prev, (int) Math.round(val.getX()), (int) Math.round(val.getY()));
                 }
                 prev = (int) Math.round(val.getY());
@@ -196,17 +213,17 @@ public class GraphDisplay extends JPanel {
     }
     
     private void drawDouble(Graphics g, double val, int x, int y) {
-        String str = GraphUtils.roundDouble(val, precision, true);
+        String str = GraphUtils.roundDouble(val, precision, maxNumberLength, true);
         g.drawString(str, x - g.getFontMetrics().stringWidth(str) / 2, y + g.getFontMetrics().getAscent() / 2);
     }
     
     private void drawDoubleLeft(Graphics g, double val, int x, int y) {
-        String str = GraphUtils.roundDouble(val, precision, true);
+        String str = GraphUtils.roundDouble(val, precision, maxNumberLength, true);
         g.drawString(str, x - g.getFontMetrics().stringWidth(str) - valueDrawOffsetX, y + g.getFontMetrics().getAscent() / 2);
     }
     
     private void drawDoubleBottom(Graphics g, double val, int x, int y) {
-        String str = GraphUtils.roundDouble(val, precision, true);
+        String str = GraphUtils.roundDouble(val, precision, maxNumberLength, true);
         g.drawString(str, x - g.getFontMetrics().stringWidth(str) / 2, y + g.getFontMetrics().getAscent() + valueDrawOffsetY);
     }
     
@@ -242,12 +259,12 @@ public class GraphDisplay extends JPanel {
         this.interpolators = interpolators;
     }
     
-    public List<Interpolator> getInterpolatorsHighligthed() {
-        return interpolatorsHighligthed;
+    public List<Interpolator> getInterpolatorsHighlighted() {
+        return interpolatorsHighlighted;
     }
     
-    public void setInterpolatorsHighligthed(List<Interpolator> interpolatorsHighligthed) {
-        this.interpolatorsHighligthed = interpolatorsHighligthed;
+    public void setInterpolatorsHighlighted(List<Interpolator> interpolatorsHighlighted) {
+        this.interpolatorsHighlighted = interpolatorsHighlighted;
     }
     
     public List<PointDouble> getPoints() {
@@ -258,49 +275,75 @@ public class GraphDisplay extends JPanel {
         this.points = points;
     }
     
-    public List<PointDouble> getPointsHighligthed() {
-        return pointsHighligthed;
+    public List<PointDouble> getPointsHighlighted() {
+        return pointsHighlighted;
     }
     
-    public void setPointsHighligthed(List<PointDouble> pointsHighligthed) {
-        this.pointsHighligthed = pointsHighligthed;
+    public void setPointsHighlighted(List<PointDouble> pointsHighlighted) {
+        this.pointsHighlighted = pointsHighlighted;
     }
     
     private void calculateBounds() {
         if (interpolators == null) {
             interpolators = new ArrayList<>();
         }
-        if (interpolatorsHighligthed == null) {
-            interpolatorsHighligthed = new ArrayList<>();
+        if (interpolatorsHighlighted == null) {
+            interpolatorsHighlighted = new ArrayList<>();
         }
     
         List<Interpolator> all = new ArrayList<>(interpolators);
-        all.addAll(interpolatorsHighligthed);
+        all.addAll(interpolatorsHighlighted);
     
         if (points == null) {
             points = new ArrayList<>();
         }
-        if (pointsHighligthed == null) {
-            pointsHighligthed = new ArrayList<>();
+        if (pointsHighlighted == null) {
+            pointsHighlighted = new ArrayList<>();
         }
     
         List<PointDouble> allP = new ArrayList<>(points);
-        allP.addAll(pointsHighligthed);
+        allP.addAll(pointsHighlighted);
         
-        double lowerX = all.stream().map(Interpolator::lower).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
-        double upperX = all.stream().map(Interpolator::upper).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
-        double lowerY = all.stream().map(Interpolator::lowerVal).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
-        double upperY = all.stream().map(Interpolator::upperVal).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
+        if (autoModeX) {
+            double lowerX = all.stream().map(Interpolator::lower).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
+            double upperX = all.stream().map(Interpolator::upper).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
     
-        double lowerXp = allP.stream().map(PointDouble::getX).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
-        double upperXp = allP.stream().map(PointDouble::getX).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
-        double lowerYp = allP.stream().map(PointDouble::getY).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
-        double upperYp = allP.stream().map(PointDouble::getY).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
+            double lowerXp = allP.stream().map(PointDouble::getX).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
+            double upperXp = allP.stream().map(PointDouble::getX).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
+    
+            this.lowerX = Math.min(lowerX, lowerXp);
+            this.upperX = Math.max(upperX, upperXp);
+        }
+        else {
+            this.lowerX = minX;
+            this.upperX = maxX;
+        }
+    
+        if (autoModeY) {
+            double lowerY = all.stream().map(Interpolator::lowerVal).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
+            double upperY = all.stream().map(Interpolator::upperVal).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
+            
+            double lowerYp = allP.stream().map(PointDouble::getY).min(Comparator.naturalOrder()).orElse(+Double.MAX_VALUE);
+            double upperYp = allP.stream().map(PointDouble::getY).max(Comparator.naturalOrder()).orElse(-Double.MAX_VALUE);
+    
+            this.lowerY = Math.min(lowerY, lowerYp);
+            this.upperY = Math.max(upperY, upperYp);
+        }
+        else {
+            this.lowerY = minY;
+            this.upperY = maxY;
+        }
         
-        this.lowerX = Math.max(Math.min(lowerX, lowerXp), minX);
-        this.upperX = Math.min(Math.max(upperX, upperXp), maxX);
-        this.lowerY = Math.max(Math.min(lowerY, lowerYp), minY);
-        this.upperY = Math.min(Math.max(upperY, upperYp), maxY);
+        if (boundRoundingXEnabled) {
+            this.lowerX = Math.floor(this.lowerX / boundRoundingX) * boundRoundingX;
+            this.upperX = Math.ceil(this.upperX / boundRoundingX) * boundRoundingX;
+        }
+    
+        if (boundRoundingYEnabled) {
+            this.lowerY = Math.floor(this.lowerY / boundRoundingY) * boundRoundingY;
+            this.upperY = Math.ceil(this.upperY / boundRoundingY) * boundRoundingY;
+        }
+        
     }
     
     private PointDouble valueToGraph(PointDouble point) {
@@ -449,5 +492,69 @@ public class GraphDisplay extends JPanel {
     
     public void setValueDrawOffsetY(int valueDrawOffsetY) {
         this.valueDrawOffsetY = valueDrawOffsetY;
+    }
+    
+    public boolean isAutoModeX() {
+        return autoModeX;
+    }
+    
+    public void setAutoModeX(boolean autoModeX) {
+        this.autoModeX = autoModeX;
+    }
+    
+    public boolean isAutoModeY() {
+        return autoModeY;
+    }
+    
+    public void setAutoModeY(boolean autoModeY) {
+        this.autoModeY = autoModeY;
+    }
+    
+    public boolean isExtrapolationEnabled() {
+        return extrapolationEnabled;
+    }
+    
+    public void setExtrapolationEnabled(boolean extrapolationEnabled) {
+        this.extrapolationEnabled = extrapolationEnabled;
+    }
+    
+    public double getBoundRoundingX() {
+        return boundRoundingX;
+    }
+    
+    public void setBoundRoundingX(double boundRoundingX) {
+        this.boundRoundingX = boundRoundingX;
+    }
+    
+    public double getBoundRoundingY() {
+        return boundRoundingY;
+    }
+    
+    public void setBoundRoundingY(double boundRoundingY) {
+        this.boundRoundingY = boundRoundingY;
+    }
+    
+    public int getMaxNumberLength() {
+        return maxNumberLength;
+    }
+    
+    public void setMaxNumberLength(int maxNumberLength) {
+        this.maxNumberLength = maxNumberLength;
+    }
+    
+    public boolean isBoundRoundingXEnabled() {
+        return boundRoundingXEnabled;
+    }
+    
+    public void setBoundRoundingXEnabled(boolean boundRoundingXEnabled) {
+        this.boundRoundingXEnabled = boundRoundingXEnabled;
+    }
+    
+    public boolean isBoundRoundingYEnabled() {
+        return boundRoundingYEnabled;
+    }
+    
+    public void setBoundRoundingYEnabled(boolean boundRoundingYEnabled) {
+        this.boundRoundingYEnabled = boundRoundingYEnabled;
     }
 }

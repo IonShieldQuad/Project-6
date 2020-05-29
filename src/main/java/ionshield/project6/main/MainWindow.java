@@ -1,9 +1,8 @@
-package ionshield.project5.main;
+package ionshield.project6.main;
 
 import com.bulenkov.darcula.DarculaLaf;
-import ionshield.project5.graphics.GraphDisplay;
-import ionshield.project5.graphics.PointDisplay;
-import ionshield.project5.math.*;
+import ionshield.project6.graphics.GraphDisplay;
+import ionshield.project6.math.*;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicLookAndFeel;
@@ -11,7 +10,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 public class MainWindow {
     private JPanel rootPanel;
@@ -65,12 +63,12 @@ public class MainWindow {
     
             pointDisplay1.setInterpolators(null);
             pointDisplay1.setPoints(null);
-            pointDisplay1.setInterpolatorsHighligthed(null);
-            pointDisplay1.setPointsHighligthed(null);
+            pointDisplay1.setInterpolatorsHighlighted(null);
+            pointDisplay1.setPointsHighlighted(null);
             pointDisplay2.setInterpolators(null);
             pointDisplay2.setPoints(null);
-            pointDisplay2.setInterpolatorsHighligthed(null);
-            pointDisplay2.setPointsHighligthed(null);
+            pointDisplay2.setInterpolatorsHighlighted(null);
+            pointDisplay2.setPointsHighlighted(null);
             
             long seed = Long.parseLong(seedField.getText());
             long multi = Long.parseLong(multiField.getText());
@@ -151,7 +149,7 @@ public class MainWindow {
             
             Interpolator ip1 = new LinearInterpolator(rowK2);
             Interpolator ip2 = new LinearInterpolator(rowKa);
-            graph.setInterpolatorsHighligthed(Collections.singletonList(ip1));
+            graph.setInterpolatorsHighlighted(Collections.singletonList(ip1));
             graph.setInterpolators(Collections.singletonList(ip2));
             graph.repaint();
             
@@ -225,7 +223,7 @@ public class MainWindow {
     }
     
     private void createUIComponents() {
-        pointDisplay1 = new GraphDisplay();
+        /*pointDisplay1 = new GraphDisplay();
         pointDisplay1.setGridX(4);
         pointDisplay1.setGridY(3);
         pointDisplay2 = new GraphDisplay();
@@ -233,6 +231,6 @@ public class MainWindow {
         pointDisplay2.setGridY(3);
         graph = new GraphDisplay();
         graph.setGridX(4);
-        graph.setGridY(3);
+        graph.setGridY(3);*/
     }
 }

@@ -1,8 +1,6 @@
-package ionshield.project5.graphics;
+package ionshield.project6.graphics;
 
-import ionshield.project5.math.InterpolationException;
-import ionshield.project5.math.Interpolator;
-import ionshield.project5.math.PointDouble;
+import ionshield.project6.math.PointDouble;
 
 import javax.swing.*;
 import java.util.List;
@@ -11,7 +9,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 
 public class PointDisplay extends JPanel {

@@ -1,4 +1,4 @@
-package ionshield.project5.graphics;
+package ionshield.project6.graphics;
 
 import java.awt.*;
 import java.math.BigDecimal;
@@ -74,19 +74,75 @@ public abstract class GraphUtils {
         return list;
     }
     
-    public static String roundDouble(double d, int precision, boolean truncate) {
+    public static String roundDouble(double d, int precision, int maxLength, boolean truncate) {
         if (d == 0) return "0";
         String val = BigDecimal.valueOf(d).setScale(precision, BigDecimal.ROUND_HALF_UP).toString();
-        if (truncate) {
-            int i = val.length() - 1;
-            while (val.charAt(i) == '0') {
-                i--;
-            }
-            if (val.charAt(i) == '.') {
-                i--;
-            }
-            val = val.substring(0, i + 1);
+        String[] parts = val.split("\\.");
+        if (parts.length < 2) {
+            parts = new String[] {parts[0], "0"};
         }
+        int exponent = 0;
+        while (parts[0].length() > (maxLength + (d > 0 ? 0 : 1))) {
+            String v = parts[0].substring(parts[0].length() - 1);
+            parts[0] = parts[0].substring(0, parts[0].length() - 1);
+            parts[1] = v + parts[1];
+            exponent++;
+        }
+        if (parts[1].length() > precision) {
+            boolean valueOverZero = false;
+            for (int i = precision; i < parts[1].length(); i++) {
+                if (parts[1].charAt(i) != '0') {
+                    valueOverZero = true;
+                    break;
+                }
+            }
+            parts[1] = String.valueOf(Integer.parseInt(parts[1].substring(0, precision)) + (valueOverZero ? 1 : 0));
+        }
+        if (parts[1].length() > 0 && truncate) {
+            int i = parts[1].length() - 1;
+            while (i >= 0 && parts[1].charAt(i) == '0') {
+                i--;
+            }
+            parts[1] = parts[1].substring(0, i + 1);
+        }
+        val = parts[0] + (parts[1].length() > 0 ? "." + parts[1] : "") + (exponent != 0 ? "E" + exponent : "");
         return val;
+    }
+    
+    public static class Line {
+        
+        public int x1;
+        public int y1;
+        public int x2;
+        public int y2;
+        
+        public Line() {}
+        
+        public Line(int x1, int y1, int x2, int y2) {
+        
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+        }
+    }
+    
+    public static class Point {
+        public int x;
+        public int y;
+        public double a = 1;
+        
+        public Point() {}
+        public Point(int x, int y) {
+        
+            this.x = x;
+            this.y = y;
+        }
+        public Point(int x, int y, double a) {
+            
+            this.x = x;
+            this.y = y;
+            this.a = a;
+        }
     }
 }

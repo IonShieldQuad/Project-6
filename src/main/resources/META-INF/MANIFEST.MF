@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: ionshield.project5.main.MainWindow
+Main-Class: ionshield.project6.main.MainWindow
 
